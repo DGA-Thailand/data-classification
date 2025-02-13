@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AssessmentData, ExportData } from '@/types';
+import { AssessmentData, ExportData, PillarScore } from '@/types';
 
 export default function AssessmentPage() {
   const [step, setStep] = useState<'name' | 'assessment' | 'result'>('name');
@@ -169,19 +169,19 @@ export default function AssessmentPage() {
                   <h3 className="font-semibold capitalize">{pillar}</h3>
                   <div className="grid grid-cols-2 gap-4">
                     {renderScoreSelector(
-                      formData[pillar as keyof typeof formData].impact,
+                      (formData[pillar as keyof Omit<AssessmentData, 'national'>] as PillarScore).impact,
                       (value) => setFormData({
                         ...formData,
-                        [pillar]: { ...formData[pillar as keyof typeof formData], impact: value }
+                        [pillar]: { ...(formData[pillar as keyof Omit<AssessmentData, 'national'>] as PillarScore), impact: value }
                       }),
                       impactOptions,
                       'Impact'
                     )}
                     {renderScoreSelector(
-                      formData[pillar as keyof typeof formData].likelihood,
+                      (formData[pillar as keyof Omit<AssessmentData, 'national'>] as PillarScore).likelihood,
                       (value) => setFormData({
                         ...formData,
-                        [pillar]: { ...formData[pillar as keyof typeof formData], likelihood: value }
+                        [pillar]: { ...(formData[pillar as keyof Omit<AssessmentData, 'national'>] as PillarScore), likelihood: value }
                       }),
                       likelihoodOptions,
                       'Likelihood'
