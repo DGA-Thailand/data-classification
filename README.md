@@ -12,16 +12,16 @@ TechStack : Next.JS
 First ask for the name of data to be assessed.
 
 * risk is assessed in 5 pillars : reputation, usage, financial, legal, national interest. 
-* the impact of the "national interest" pillar is an average of impact scores from 3 sub-pillars: confidentiality, integrity, and availability. The impact score of each sub-pillar may go from 1 (low) to 3 (high). 
+* the risk of the "national interest" pillar is calculated from the likelihood score of this pillar multiply by an average of impact scores from 3 sub-pillars: confidentiality, integrity, and availability, rounded up to the nearest integer. The impact score of each sub-pillar may go from 1 (low) to 3 (high). 
 * The user needs to provide the score of the impact of the remaining pillars from 1 (low) to 3 (high). 
-* The user needs to provide assessment for the likelihood of each pillar, and sub-pillar. Likelihood score may go from 1 to 5, defined as follows:
+* The user needs to provide assessment for the likelihood of each pillar. Likelihood score may go from 1 to 5, defined as follows:
     * Level 1: Rare (Almost Impossible) - Once a year or less
     * Level 2: Unlikely (Improbable) -  Several times a year (2-4 times)
     * Level 3: Possible (May Occur) - Monthly or several times a month (1-3 times)
     * Level 4: Likely (Probable) - Weekly or several times a week (1-3 times)
     * Level 5: Almost Certain (Expected) - Daily or multiple times a day
 * The risk score for each pillar is calculated from likelihood score multiply by impact score. 
-* total risk level is calculated by taking average of risk from all pillars. 
+* Total risk level is calculated by taking average of risk from all pillars, rounded up to the nearest integer. 
 
 Data classification is derived from total risk scores as follows: 
 * score 1-2 : public 

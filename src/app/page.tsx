@@ -1,274 +1,345 @@
 // app/page.tsx
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AssessmentData, ExportData, PillarScore } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-export default function AssessmentPage() {
-  const [step, setStep] = useState<'name' | 'assessment' | 'result'>('name');
-  const [formData, setFormData] = useState<AssessmentData>({
+interface PillarData {
+  likelihood: string;
+  impact: string;
+}
+
+interface NationalInterestData extends PillarData {
+  confidentiality: string;
+  integrity: string;
+  availability: string;
+}
+
+interface FormData {
+  dataName: string;
+  reputation: PillarData;
+  usage: PillarData;
+  financial: PillarData;
+  legal: PillarData;
+  nationalInterest: NationalInterestData;
+}
+
+interface RiskScores {
+  reputation: number;
+  usage: number;
+  financial: number;
+  legal: number;
+  nationalInterest: number;
+}
+
+interface AssessmentResult {
+  dataName: string;
+  risks: RiskScores;
+  niImpact: number;
+  totalRisk: number;
+  classification: string;
+}
+
+interface Option {
+  value: string;
+  label: string;
+}
+
+const DataClassificationTool = () => {
+  const [formData, setFormData] = useState<FormData>({
     dataName: '',
-    reputation: { impact: 1, likelihood: 1 },
-    usage: { impact: 1, likelihood: 1 },
-    financial: { impact: 1, likelihood: 1 },
-    legal: { impact: 1, likelihood: 1 },
-    national: {
-      confidentiality: { impact: 1, likelihood: 1 },
-      integrity: { impact: 1, likelihood: 1 },
-      availability: { impact: 1, likelihood: 1 },
-    },
+    reputation: { likelihood: '1', impact: '1' },
+    usage: { likelihood: '1', impact: '1' },
+    financial: { likelihood: '1', impact: '1' },
+    legal: { likelihood: '1', impact: '1' },
+    nationalInterest: {
+      likelihood: '1',
+      impact: '1',
+      confidentiality: '1',
+      integrity: '1',
+      availability: '1'
+    }
   });
 
-  const impactOptions = [
-    { value: 1, label: 'Low' },
-    { value: 2, label: 'Medium' },
-    { value: 3, label: 'High' },
+  const [result, setResult] = useState<AssessmentResult | null>(null);
+
+  const likelihoodOptions: Option[] = [
+    { value: '1', label: 'Level 1: Rare (Once a year or less)' },
+    { value: '2', label: 'Level 2: Unlikely (2-4 times a year)' },
+    { value: '3', label: 'Level 3: Possible (1-3 times monthly)' },
+    { value: '4', label: 'Level 4: Likely (1-3 times weekly)' },
+    { value: '5', label: 'Level 5: Almost Certain (Daily or more)' }
   ];
 
-  const likelihoodOptions = [
-    { value: 1, label: 'Rare - Once a year or less' },
-    { value: 2, label: 'Unlikely - Several times a year (2-4 times)' },
-    { value: 3, label: 'Possible - Monthly (1-3 times)' },
-    { value: 4, label: 'Likely - Weekly (1-3 times)' },
-    { value: 5, label: 'Almost Certain - Daily or multiple times' },
+  const impactOptions: Option[] = [
+    { value: '1', label: 'Low' },
+    { value: '2', label: 'Medium' },
+    { value: '3', label: 'High' }
   ];
 
-  const calculateNationalScore = () => {
-    const subPillars = ['confidentiality', 'integrity', 'availability'];
-    const scores = subPillars.map(
-      pillar => formData.national[pillar as keyof typeof formData.national].impact * 
-                formData.national[pillar as keyof typeof formData.national].likelihood
+  const handleInputChange = (pillar: keyof FormData, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [pillar]: { ...(prev[pillar] as PillarData), [field]: value }
+    }));
+  };
+
+  const calculateRisk = (): AssessmentResult => {
+    const niImpact = Math.ceil(
+      (parseInt(formData.nationalInterest.confidentiality) +
+        parseInt(formData.nationalInterest.integrity) +
+        parseInt(formData.nationalInterest.availability)) / 3
     );
-    return scores.reduce((a, b) => a + b) / 3;
-  };
 
-  const calculateRiskScores = () => {
-    const mainPillarScores = {
-      reputation: formData.reputation.impact * formData.reputation.likelihood,
-      usage: formData.usage.impact * formData.usage.likelihood,
-      financial: formData.financial.impact * formData.financial.likelihood,
-      legal: formData.legal.impact * formData.legal.likelihood,
-      national: calculateNationalScore(),
+    const risks: RiskScores = {
+      reputation: parseInt(formData.reputation.likelihood) * parseInt(formData.reputation.impact),
+      usage: parseInt(formData.usage.likelihood) * parseInt(formData.usage.impact),
+      financial: parseInt(formData.financial.likelihood) * parseInt(formData.financial.impact),
+      legal: parseInt(formData.legal.likelihood) * parseInt(formData.legal.impact),
+      nationalInterest: parseInt(formData.nationalInterest.likelihood) * niImpact
     };
 
-    const totalScore = Object.values(mainPillarScores).reduce((a, b) => a + b) / 5;
-    
+    const totalRisk = Math.ceil(
+      Object.values(risks).reduce((sum, risk) => sum + risk, 0) / 5
+    );
+
+    let classification: string;
+    if (totalRisk >= 10) classification = 'Top Secret';
+    else if (totalRisk >= 7) classification = 'Secret';
+    else if (totalRisk >= 5) classification = 'Confidential';
+    else if (totalRisk >= 3) classification = 'Internal';
+    else classification = 'Public';
+
     return {
-      pillarScores: mainPillarScores,
-      totalScore,
+      dataName: formData.dataName,
+      risks,
+      niImpact,
+      totalRisk,
+      classification
     };
   };
 
-  const getClassification = (score: number): string => {
-    if (score >= 10) return 'TOP SECRET';
-    if (score >= 7) return 'SECRET';
-    if (score >= 5) return 'CONFIDENTIAL';
-    if (score >= 3) return 'INTERNAL';
-    return 'PUBLIC';
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = calculateRisk();
+    setResult(result);
   };
 
-  const handleExport = () => {
-    const { pillarScores, totalScore } = calculateRiskScores();
-    
-    const exportData: ExportData = {
-      ...formData,
-      pillarRiskScores: pillarScores,
-      totalRiskScore: totalScore,
-      classification: getClassification(totalScore),
-      assessmentDate: new Date().toISOString(),
-    };
+  const exportResult = () => {
+    if (!result) return;
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const headers = [
+      'Timestamp',
+      'Data Name',
+      'Classification',
+      'Total Risk Score',
+      'Reputation Risk Score',
+      'Reputation Likelihood',
+      'Reputation Impact',
+      'Usage Risk Score',
+      'Usage Likelihood',
+      'Usage Impact',
+      'Financial Risk Score',
+      'Financial Likelihood',
+      'Financial Impact',
+      'Legal Risk Score',
+      'Legal Likelihood',
+      'Legal Impact',
+      'National Interest Risk Score',
+      'National Interest Likelihood',
+      'National Interest Confidentiality',
+      'National Interest Integrity',
+      'National Interest Availability',
+      'National Interest Impact'
+    ].join(',');
+
+    const data = [
+      new Date().toISOString(),
+      result.dataName,
+      result.classification,
+      result.totalRisk,
+      result.risks.reputation,
+      formData.reputation.likelihood,
+      formData.reputation.impact,
+      result.risks.usage,
+      formData.usage.likelihood,
+      formData.usage.impact,
+      result.risks.financial,
+      formData.financial.likelihood,
+      formData.financial.impact,
+      result.risks.legal,
+      formData.legal.likelihood,
+      formData.legal.impact,
+      result.risks.nationalInterest,
+      formData.nationalInterest.likelihood,
+      formData.nationalInterest.confidentiality,
+      formData.nationalInterest.integrity,
+      formData.nationalInterest.availability,
+      result.niImpact
+    ].map(value => {
+      const stringValue = String(value);
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    }).join(',');
+
+    const csvContent = `${headers}\n${data}`;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${formData.dataName.replace(/\s+/g, '_')}_classification.json`;
+    a.download = `classification-${result.dataName.replace(/\s+/g, '-')}-${new Date().toISOString().slice(0,10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const renderScoreSelector = (
-    value: number,
-    onChange: (value: number) => void,
-    options: { value: number; label: string }[],
-    label: string
-  ) => (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Select
-        value={value.toString()}
-        onValueChange={(val) => onChange(Number(val))}
-      >
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value.toString()}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
-  if (step === 'name') {
-    return (
-      <div className="container mx-auto p-4 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Data Classification Assessment</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+  return (
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Classification Assessment Tool</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="dataName">Name of Data to be Assessed</Label>
+              <Label htmlFor="dataName">Data Name</Label>
               <Input
                 id="dataName"
                 value={formData.dataName}
-                onChange={(e) => setFormData({ ...formData, dataName: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, dataName: e.target.value }))}
+                required
                 placeholder="Enter data name"
               />
             </div>
-            <Button 
-              onClick={() => setStep('assessment')}
-              disabled={!formData.dataName.trim()}
-              className="w-full"
-            >
-              Continue
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
-  const { pillarScores, totalScore } = calculateRiskScores();
-  const classification = getClassification(totalScore);
-
-  return (
-    <div className="container mx-auto p-4 max-w-2xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {step === 'assessment' ? 'Risk Assessment' : 'Assessment Results'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {step === 'assessment' ? (
-            <>
-              {['reputation', 'usage', 'financial', 'legal'].map((pillar) => (
-                <div key={pillar} className="space-y-4 border-b pb-4">
-                  <h3 className="font-semibold capitalize">{pillar}</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {renderScoreSelector(
-                      (formData[pillar as keyof Omit<AssessmentData, 'national'>] as PillarScore).impact,
-                      (value) => setFormData({
-                        ...formData,
-                        [pillar]: { ...(formData[pillar as keyof Omit<AssessmentData, 'national'>] as PillarScore), impact: value }
-                      }),
-                      impactOptions,
-                      'Impact'
-                    )}
-                    {renderScoreSelector(
-                      (formData[pillar as keyof Omit<AssessmentData, 'national'>] as PillarScore).likelihood,
-                      (value) => setFormData({
-                        ...formData,
-                        [pillar]: { ...(formData[pillar as keyof Omit<AssessmentData, 'national'>] as PillarScore), likelihood: value }
-                      }),
-                      likelihoodOptions,
-                      'Likelihood'
-                    )}
+            {(['reputation', 'usage', 'financial', 'legal'] as const).map((pillar) => (
+              <div key={pillar} className="space-y-4 border p-4 rounded-lg">
+                <h3 className="text-lg font-semibold capitalize">{pillar} Risk Assessment</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Likelihood</Label>
+                    <Select
+                      value={formData[pillar].likelihood}
+                      onValueChange={(value) => handleInputChange(pillar, 'likelihood', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select likelihood" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {likelihoodOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Impact</Label>
+                    <Select
+                      value={formData[pillar].impact}
+                      onValueChange={(value) => handleInputChange(pillar, 'impact', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select impact" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {impactOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
 
+            <div className="space-y-4 border p-4 rounded-lg">
+              <h3 className="text-lg font-semibold">National Interest Risk Assessment</h3>
               <div className="space-y-4">
-                <h3 className="font-semibold">National Interest</h3>
-                {['confidentiality', 'integrity', 'availability'].map((subPillar) => (
-                  <div key={subPillar} className="space-y-4 border-b pb-4">
-                    <h4 className="capitalize">{subPillar}</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      {renderScoreSelector(
-                        formData.national[subPillar as keyof typeof formData.national].impact,
-                        (value) => setFormData({
-                          ...formData,
-                          national: {
-                            ...formData.national,
-                            [subPillar]: { ...formData.national[subPillar as keyof typeof formData.national], impact: value }
-                          }
-                        }),
-                        impactOptions,
-                        'Impact'
-                      )}
-                      {renderScoreSelector(
-                        formData.national[subPillar as keyof typeof formData.national].likelihood,
-                        (value) => setFormData({
-                          ...formData,
-                          national: {
-                            ...formData.national,
-                            [subPillar]: { ...formData.national[subPillar as keyof typeof formData.national], likelihood: value }
-                          }
-                        }),
-                        likelihoodOptions,
-                        'Likelihood'
-                      )}
+                <div className="space-y-2">
+                  <Label>Likelihood</Label>
+                  <Select
+                    value={formData.nationalInterest.likelihood}
+                    onValueChange={(value) => handleInputChange('nationalInterest', 'likelihood', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select likelihood" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {likelihoodOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  {(['confidentiality', 'integrity', 'availability'] as const).map((subPillar) => (
+                    <div key={subPillar} className="space-y-2">
+                      <Label className="capitalize">{subPillar}</Label>
+                      <Select
+                        value={formData.nationalInterest[subPillar]}
+                        onValueChange={(value) => handleInputChange('nationalInterest', subPillar, value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select impact" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {impactOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              <Button onClick={() => setStep('result')} className="w-full">
-                Calculate Classification
-              </Button>
-            </>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-semibold">Data Name</h3>
-                <p>{formData.dataName}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="font-semibold">Risk Scores</h3>
-                {Object.entries(pillarScores).map(([pillar, score]) => (
-                  <div key={pillar} className="flex justify-between">
-                    <span className="capitalize">{pillar}:</span>
-                    <span>{score.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t pt-4 space-y-2">
-                <div className="flex justify-between font-semibold">
-                  <span>Total Risk Score:</span>
-                  <span>{totalScore.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between font-semibold">
-                  <span>Classification:</span>
-                  <span>{classification}</span>
+                  ))}
                 </div>
               </div>
+            </div>
 
-              <div className="flex gap-4 pt-4">
-                <Button onClick={() => setStep('assessment')} variant="outline" className="w-full">
-                  Back to Assessment
-                </Button>
-                <Button onClick={handleExport} className="w-full">
-                  Export Results
-                </Button>
-              </div>
+            <Button type="submit" className="w-full">Calculate Classification</Button>
+          </form>
+
+          {result && (
+            <div className="mt-6 space-y-4">
+              <Alert>
+                <AlertTitle>Classification Result</AlertTitle>
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p><strong>Data Name:</strong> {result.dataName}</p>
+                    <p><strong>Classification:</strong> {result.classification}</p>
+                    <p><strong>Total Risk Score:</strong> {result.totalRisk}</p>
+                    <p><strong>Individual Risk Scores:</strong></p>
+                    <ul className="list-disc pl-6">
+                      <li>Reputation: {result.risks.reputation}</li>
+                      <li>Usage: {result.risks.usage}</li>
+                      <li>Financial: {result.risks.financial}</li>
+                      <li>Legal: {result.risks.legal}</li>
+                      <li>National Interest: {result.risks.nationalInterest} (Impact: {result.niImpact})</li>
+                    </ul>
+                  </div>
+                </AlertDescription>
+              </Alert>
+              <Button onClick={exportResult} className="w-full">Export Results</Button>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default DataClassificationTool;
