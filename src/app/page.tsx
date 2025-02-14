@@ -68,12 +68,40 @@ const DataClassificationTool = () => {
 
   const [result, setResult] = useState<AssessmentResult | null>(null);
 
+  const impactDescription = new Map<string, string>([
+    ['reputation-1', 'น้อย/อย่างจำกัด โดยพิจารณาจาก 1. ส่งผลกระทบเฉพาะภาพลักษณ์หน่วยงาน ใช่หรือไม่ 2. ส่งผลกระทบต่อการรับรู้บทบาทหน้าที่ของหน่วยงาน ใช่หรือไม่ 3. ส่งผลกระทบต่อภาพลักษณ์ของระบบการให้บริการ ใช่หรือไม่'],
+    ['reputation-2', 'อย่างร้ายแรง โดยพิจารณาจาก 1. ส่งผลกระทบต่อภาพลักษณ์ของระบบการให้บริการ ใช่หรือไม่ 2. ส่งผลความเชื่อมั่นของผู้ใช้บริการ ใช่หรือไม่ 3. สามารถฟ้องร้องทางคดีแพ่ง ใช่หรือไม่'],
+    ['reputation-3', 'อย่างร้ายแรงมาก โดยพิจารณาจาก	1. ส่งผลกระทบต่อภาพลักษณ์ขื่อเสียงของรัฐในระดับประเทศ ใช่หรือไม่ 2. สามารถฟ้องร้องทางคดีแพ่ง ใช่หรือไม่ 3. สามารถฟ้องร้องทางคดีอาญา ใช่หรือไม่'],
+    ['usage-1', 'รายบริการ/การดำเนินงานขององค์กร โดยพิจารณาจาก 1. ส่งผลกระทบต่อการทำงานภายในหน่วยงาน ใช่หรือไม่ 2. ส่งผลกระทบต่อประสิทธิภาพการทำงานของผู้ปฏิบัติงานของหน่วยงานลดลง ใช่หรือไม่ 3. ส่งผลการใช้งานของจำนวนผู้ใช้งานในวงแคบ ใช่หรือไม่'],
+    ['usage-2', 'ราย Domain/การดำเนินของกระทรวง/ระหว่าง องค์กร/จังหวัด โดยพิจารณาจาก 1. ส่งผลให้เกิดอุปสรรคต่อการทำงานภายในหน่วยงาน และหน่วยงานคู่สัญญา 2. ส่งผลต่อประสิทธิภาพการให้บริการของระบบ 3. บางบริการมีความไม่สะดวก หรือล่าช้า เสียเวลา แต่ยังไม่สูญเสียข้อมูล ใช่หรือไม่ 4. ส่งผลกระทบต่อผู้ใช้บริการบางส่วน ใช่หรือไม่ '],
+    ['usage-3', 'Cross Domains,  Sectors, Region/การดำเนินงานตามแผนบูรณาการ/กลุ่มจังหวัด โดยพิจารณาจาก 1. ส่งผลกระทบต่อการทำงานภายในหน่วยงานเครือข่ายมากกว่า 2 หน่วยงาน ใช่หรือไม่  2. ส่งผลกระทบต่อผู้มาใช้บริการทุกคน และกระทบวงกว้างในระดับประเทศ ใช่หรือไม่ 3. ระบบล่มหรือใช้งานไม่ได้ ทำให้เกิดความเสียหายของผู้ใช้บริการ ใช่หรือไม่ 4. ข้อมูลในระบบสูญหายและไม่สามารถกู้คืนมา ใช่หรือไม่'],
+    ['financial-1', 'มูลค่าไม่เกิน 5 ล้าน/ Small project โดยพิจารณาจาก มูลค่าความเสียหายของการให้บริการหรือโครงการ เช่น ค่าดำเนินการ เช่น ค่าปรับ ค่าเยียวยา ค่าเสียหาย โดยมีมูลค่าไม่เกิน 5 ล้าน ใช่หรือไม่ ทั้งนี้ การพิจารณาเป็นตัวเงินและความสูญเสียหายของ Asset อาจเป็นเรื่องบทลงโทษทางกฎหมาย มูลค่าความเสียหาย ค่าดำเนินการต่างๆ'],
+    ['financial-2', ' ตั้งแต่ 5 ล้าน แต่ไม่ถึง 100  ล้าน/ Medium project โดยพิจารณาจาก มูลค่าความเสียหายของการให้บริการหรือโครงการ เช่น ค่าดำเนินการ เช่น ค่าปรับ ค่าเยียวยา ค่าเสียหาย โดยมีมูลค่า ตั้งแต่ 5 ล้าน แต่ไม่ถึง 50 ล้านบาท ใช่หรือไม่ ทั้งนี้ การพิจารณาเป็นตัวเงินและความสูญเสียหายของ Asset อาจเป็นเรื่องบทลงโทษทางกฎหมาย มูลค่าความเสียหาย ค่าดำเนินการต่างๆ'],
+    ['financial-3', 'ตั้งแต่ 100 ล้านบาท ขึ้นไป / Large Project โดยพิจารณาจาก	มูลค่าความเสียหายของการให้บริการหรือโครงการ เช่น ค่าดำเนินการ เช่น ค่าปรับ ค่าเยียวยา ค่าเสียหาย โดยมีมูลค่า ตั้งแต่ 100 ล้านบาท ใช่หรือไม่ ทั้งนี้ การพิจารณาเป็นตัวเงินและความสูญเสียหายของ Asset อาจเป็นเรื่องบทลงโทษทางกฎหมาย มูลค่าความเสียหาย ค่าดำเนินการต่างๆ'],
+    ['legal-1', 'ละเว้นการปฏิบัติตามระเบียบข้อบังคับขององค์กร ซึ่งเกิดผลกระทบน้อย โดยพิจารณาจาก	1. ไม่ปฏิบัติตามกฎระเบียบระดับองค์กร ใช่หรือไม่ 2. ส่งผลให้หน่วยงานได้รับบทลงโทษของหน่วยงาน ใช่หรือไม่'],
+    ['legal-2', 'ละเว้นการปฏิบัติตามระเบียบข้อบังคับและกฎกระทรวง ซึ่งเกิดผลกระทบที่มีนัยสำคัญ 1. และไม่เป็นไปตามเป้าของ ก.พ.ร. โดยพิจารณาจาก	ไม่ปฏิบัติตามกฎระเบียบระดับกระทรวง เช่น กฎกระทรวง ใช่หรือไม่ 2. ส่งผลให้หน่วยงานได้รับบทลงโทษทางอาญาและทางแพ่ง หรือ โทษทางปกครอง ใช่หรือไม่'],
+    ['legal-3', 'ละเว้นการปฏิบัติตามกฎหมาย มติ ครม. หรือระเบียบข้อบังคับ ซึ่งเกิดผลกระทบที่มีนัยสำคัญ และไม่เป็นไปตามเป้าของแผนบูรณาการ/กลุ่มจังหวัด โดยพิจารณาจาก 1. ไม่ปฏิบัติตามกฎหมายอย่างชัดเจน หรือไม่ปฏิบัติตามมติ ครม. รัฐบาล  และไม่เป็นไปตามเป้าหมายของแผนบูรณการ ใช่หรือไม่ 2. ไม่ปฏิบัติตามกฎหมายส่งผลให้หน่วยงานได้รับบทลงโทษทางอาญาและทางแพ่ง หรือ โทษทางปกครอง ใช่หรือไม่'],
+    ['nationalInterest', ''],
+    ['confidentiality-0', 'การรักษาข้อจำกัดในการได้รับอนุญาตให้เข้าถึงได้และเปิดเผยเฉพาะผู้มีสิทธิ์ รวมทั้งวิธีการคุ้มครองความเป็นส่วนตัว (privacy) และกรรมสิทธิ์ (proprietary) ของข้อมูลข่าวสาร'],
+    ['confidentiality-1', 'Low: การเปิดเผยข้อมูลโดยไม่ได้รับอนุญาตอาจส่งผลกระทบน้อย/อย่างจำกัด (limited) และเกิดผลประโยชน์แห่งชาติสำคัญน้อย (Less Important or Secondary National Interests)'],
+    ['confidentiality-2', 'Medium: การเปิดเผยข้อมูลโดยไม่ได้รับอนุญาตอาจส่งผลกระทบอย่างร้ายแรง (serious) และเกิดผลประโยชน์แห่งชาติที่สำคัญ (Important National Interests)'], 
+    ['confidentiality-3', 'High: การเปิดเผยข้อมูลโดยไม่ได้รับอนุญาตอาจส่งผลกระทบอย่างร้ายแรงมาก (severe or catastrophic) และเกิดผลประโยชน์แห่งชาติสำคัญยิ่ง (Extremely Important National Interests)'],
+    ['integrity-0', 'การปกป้องจากการดัดแปลงหรือทำลายข้อมูลที่ไม่เหมาะสม และรวมถึงการรับรองว่าข้อมูลจะไม่ถูกปฏิเสธ (non-repudiation) และเป็นข้อมูลที่ถูกต้องเป็นความจริง (authenticity)'],
+    ['integrity-1', 'Low: การแก้ไขหรือทำลายข้อมูลโดยไม่ได้รับอนุญาตอาจส่งผลกระทบน้อย/อย่างจำกัด (limited) และเกิดผลประโยชน์แห่งชาติสำคัญน้อย (Less Important or Secondary National Interests) '],
+    ['integrity-2', 'Medium: การแก้ไขหรือทำลายข้อมูลโดยไม่ได้รับอนุญาตอาจส่งผลกระทบอย่างร้ายแรง (serious) และเกิดผลประโยชน์แห่งชาติที่สำคัญ (Important National Interests)'],
+    ['integrity-3', 'High: การแก้ไขหรือทำลายข้อมูลโดยไม่ได้รับอนุญาตอาจส่งผลกระทบอย่างร้ายแรงมาก (severe or catastrophic) และเกิดผลประโยชน์แห่งชาติสำคัญยิ่ง (Extremely Important National Interests) '],
+    ['availability-0', 'การสร้างความมั่นใจในการเข้าถึงและการใช้ข้อมูลอย่างทันท่วงที/เป็นปัจจุบันและเชื่อถือได้'],
+    ['availability-1', 'Low: การหยุดชะงักของการเข้าถึงหรือการใช้ข้อมูลข่าวสารหรือระบบสารสนเทศอาจส่งผลกระทบน้อย/อย่างจำกัด (limited) และเกิดผลประโยชน์แห่งชาติสำคัญน้อย (Less Important or Secondary National Interests) '],
+    ['availability-2', 'Medium: การหยุดชะงักของการเข้าถึงหรือการใช้ข้อมูลข่าวสารหรือระบบสารสนเทศอาจส่งผลกระทบอย่างร้ายแรง (serious) และเกิดผลประโยชน์แห่งชาติที่สำคัญ (Important National Interests)'],
+    ['availability-3', 'High: การหยุดชะงักของการเข้าถึงหรือการใช้ข้อมูลข่าวสารหรือระบบสารสนเทศอาจส่งผลกระทบอย่างร้ายแรงมาก (severe or catastrophic) และเกิดผลประโยชน์แห่งชาติสำคัญยิ่ง (Extremely Important National Interests) ']
+  ]);
+
   const likelihoodOptions: Option[] = [
-    { value: '1', label: 'Level 1: Rare (Once a year or less)' },
-    { value: '2', label: 'Level 2: Unlikely (2-4 times a year)' },
-    { value: '3', label: 'Level 3: Possible (1-3 times monthly)' },
-    { value: '4', label: 'Level 4: Likely (1-3 times weekly)' },
-    { value: '5', label: 'Level 5: Almost Certain (Daily or more)' }
+    { value: '1', label: 'Level 1: แทบจะไม่เกิด (เช่น อย่างมากปีละ 1 ครั้ง)' },
+    { value: '2', label: 'Level 2: โอกาสเกิดน้อย (เช่น ไม่เกินปีละ 2 ครั้ง)' },
+    { value: '3', label: 'Level 3: ปานกลาง (เช่น ปีละ 3-5 ครั้ง)' },
+    { value: '4', label: 'Level 4: ค่อนข้างบ่อย (เช่น ปีละ 6-10 ครั้ง)' },
+    { value: '5', label: 'Level 5: เกิดเป็นประจำ (เช่น อย่างน้อยเดือนละครั้ง)' }
   ];
 
   const impactOptions: Option[] = [
@@ -90,7 +118,7 @@ const DataClassificationTool = () => {
   };
 
   const calculateRisk = (): AssessmentResult => {
-    const niImpact = Math.ceil(
+    const niImpact = Math.round(
       (parseInt(formData.nationalInterest.confidentiality) +
         parseInt(formData.nationalInterest.integrity) +
         parseInt(formData.nationalInterest.availability)) / 3
@@ -223,6 +251,13 @@ const DataClassificationTool = () => {
             {(['reputation', 'usage', 'financial', 'legal'] as const).map((pillar) => (
               <div key={pillar} className="space-y-4 border p-4 rounded-lg">
                 <h3 className="text-lg font-semibold capitalize">{pillar} Risk Assessment</h3>
+                <div className="text-sm space-y-2">คำนิยามระดับ impact</div>
+                <ul className="text-sm list-disc pl-6">
+                  <li>Low: {impactDescription.get(pillar+"-1")}</li>
+                  <li>Medium: {impactDescription.get(pillar+"-2")}</li>
+                  <li>High: {impactDescription.get(pillar+"-3")}</li>
+                </ul>
+                <br></br>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Likelihood</Label>
@@ -289,6 +324,15 @@ const DataClassificationTool = () => {
                   {(['confidentiality', 'integrity', 'availability'] as const).map((subPillar) => (
                     <div key={subPillar} className="space-y-2">
                       <Label className="capitalize">{subPillar}</Label>
+                      <div className="text-sm space-y-2">
+                      <p>{impactDescription.get(subPillar+"-0")}</p>
+                        <ul className="list-disc pl-6">
+                          <li>{impactDescription.get(subPillar+"-1")}</li>
+                          <li>{impactDescription.get(subPillar+"-2")}</li>
+                          <li>{impactDescription.get(subPillar+"-3")}</li>
+                        </ul>
+                      </div>
+                        <br></br>
                       <Select
                         value={formData.nationalInterest[subPillar]}
                         onValueChange={(value) => handleInputChange('nationalInterest', subPillar, value)}
