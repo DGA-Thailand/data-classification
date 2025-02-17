@@ -132,7 +132,7 @@ const DataClassificationTool = () => {
       nationalInterest: parseInt(formData.nationalInterest.likelihood) * niImpact
     };
 
-    const totalRisk = Math.ceil(
+    const totalRisk = Math.round(
       Object.values(risks).reduce((sum, risk) => sum + risk, 0) / 5
     );
 
